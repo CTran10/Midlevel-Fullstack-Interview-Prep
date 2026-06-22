@@ -1,0 +1,13 @@
+.next/
+node_modules/
+out/
+dist/
+coverage/
+.DS_Store
+.env
+.env.*
+.env*.local
+!.env.example
+.pnpm-store/
+tsconfig.tsbuildinfo
+*.log
