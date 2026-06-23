@@ -93,6 +93,9 @@ describe("reading modules", () => {
         "api-endpoint-design",
         "observability-debugging",
         "frontend-state-forms",
+        "angularjs-legacy-basics",
+        "nosql-search-backend-systems",
+        "ai-coding-tools-sdlc",
         "sql-live-coding-drills"
       ])
     );
@@ -120,5 +123,14 @@ describe("reading modules", () => {
     expect(combinedContent).toContain("logs, metrics, and traces");
     expect(combinedContent).toContain("loading, empty, error, and success states");
     expect(combinedContent).toContain("SQL");
+    expect(combinedContent).toContain("AngularJS 1.x");
+    expect(combinedContent).toContain("$scope");
+    expect(combinedContent).toContain("digest cycle");
+    expect(combinedContent).toContain("Cassandra");
+    expect(combinedContent).toContain("partition key");
+    expect(combinedContent).toContain("Elasticsearch");
+    expect(combinedContent).toContain("AI coding tools");
+    expect(combinedContent).toContain("test generation");
+    expect(combinedContent).toContain("release");
   });
 });

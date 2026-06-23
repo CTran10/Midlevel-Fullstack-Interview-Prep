@@ -448,6 +448,48 @@
     "interviewPrompt": "What states should a bookings list page support?"
   },
   {
+    "topic": "Angular Basics",
+    "question": "How is AngularJS 1.x different from modern Angular?",
+    "answer": "AngularJS 1.x centers on controllers, $scope, directives, two-way binding, services or factories, and the digest cycle, while modern Angular uses components, TypeScript classes, dependency injection, RxJS, and reactive forms.",
+    "example": "A legacy screen may bind input with ng-model on $scope, while a modern Angular screen might use FormControl inside a component class.",
+    "interviewPrompt": "How would you avoid mixing AngularJS 1.x concepts with modern Angular concepts in an interview answer?"
+  },
+  {
+    "topic": "Angular Basics",
+    "question": "What is $scope in AngularJS 1.x?",
+    "answer": "$scope is the object that connects a controller to a template. Values and functions placed on $scope become available to AngularJS expressions and bindings.",
+    "example": "$scope.bookings = []; $scope.refresh = function() { return BookingFactory.list(); };",
+    "interviewPrompt": "How does $scope differ from component instance state in modern Angular?"
+  },
+  {
+    "topic": "Angular Basics",
+    "question": "What is the AngularJS digest cycle?",
+    "answer": "The digest cycle checks watched expressions for changes and updates bindings. It is what makes two-way binding work, but too many watches or manual updates outside AngularJS can cause performance or stale-view issues.",
+    "example": "A large ng-repeat list with many bound expressions can create many watchers and slow each digest.",
+    "interviewPrompt": "How would you debug a UI that does not update after an async callback?"
+  },
+  {
+    "topic": "Angular Basics",
+    "question": "What are controllers, services, factories, and providers in AngularJS 1.x?",
+    "answer": "Controllers coordinate template state, services and factories share reusable logic or API access, and providers configure services before runtime injection.",
+    "example": "BookingController owns $scope state, while BookingFactory wraps $http calls to the bookings API.",
+    "interviewPrompt": "Why move API calls out of an AngularJS controller and into a factory or service?"
+  },
+  {
+    "topic": "Angular Basics",
+    "question": "What are AngularJS directives used for?",
+    "answer": "Directives extend HTML with reusable behavior or UI. Built-in directives include ng-repeat, ng-if, and ng-model; custom directives can encapsulate DOM behavior but should avoid hiding too much business logic.",
+    "example": "ng-repeat renders bookings, ng-if toggles empty state, and a custom directive might wrap a date picker.",
+    "interviewPrompt": "When would a directive be better than adding more code to a controller?"
+  },
+  {
+    "topic": "Angular Basics",
+    "question": "How do ng-repeat and ng-model relate to AngularJS two-way binding?",
+    "answer": "ng-repeat renders a template for each item in a collection, while ng-model binds form input to scope data. Together they are convenient but can create watcher-heavy screens if used carelessly.",
+    "example": "ng-repeat='booking in bookings track by booking.id' renders rows, and ng-model='filters.query' keeps a search input in sync with $scope.",
+    "interviewPrompt": "What performance issue can appear in a large ng-repeat list, and how would you mitigate it?"
+  },
+  {
     "topic": "AWS EC2",
     "question": "What is EC2?",
     "answer": "EC2 provides virtual machines where you manage the operating system, runtime, scaling, patching, and deployment configuration.",

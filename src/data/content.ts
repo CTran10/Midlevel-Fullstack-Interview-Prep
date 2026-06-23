@@ -624,6 +624,73 @@ export const readingModules: ReadingModule[] = [
     ]
   },
   {
+    id: "nosql-search-backend-systems",
+    title: "NoSQL and search systems",
+    category: "Backend data systems",
+    estimatedMinutes: 8,
+    summary:
+      "Cassandra and Elasticsearch solve different problems from a relational database, so strong answers start with the access pattern instead of the technology name.",
+    coreFacts: [
+      {
+        label: "Cassandra fit",
+        body:
+          "Cassandra fits high-write, horizontally scaled workloads where queries are known up front and data can be modeled around those reads."
+      },
+      {
+        label: "Partition key",
+        body:
+          "A Cassandra partition key controls data distribution and efficient lookup; a bad key can create hot partitions or force scans Cassandra is not built to do."
+      },
+      {
+        label: "Consistency levels",
+        body:
+          "Cassandra trades relational flexibility for availability and scale; read and write consistency levels decide how much latency you pay for fresher results."
+      },
+      {
+        label: "Elasticsearch role",
+        body:
+          "Elasticsearch is a search index, not the source of truth; mappings, analyzers, filters, scoring, and reindex plans shape correctness and performance."
+      }
+    ],
+    interviewLine:
+      "I would use Cassandra for predictable, high-write access patterns designed around partition keys, Elasticsearch for search and filtering, and keep Postgres as the source of truth when joins, transactions, and ad hoc queries matter.",
+    tradeoffLens: {
+      prompt: "When would you choose Cassandra or Elasticsearch instead of Postgres?",
+      juniorAnswer:
+        "I would choose Cassandra for scale and Elasticsearch when I need search.",
+      midLevelAnswer:
+        "I would choose Cassandra only when the read and write paths are stable enough to design tables around a partition key, and I would choose Elasticsearch when users need full-text search, filters, or scoring. The trade-off is that both systems usually duplicate data and need sync, reindexing, monitoring, and clear source-of-truth boundaries.",
+      considerations: [
+        "Access pattern certainty",
+        "Write volume",
+        "Consistency requirements",
+        "Index freshness",
+        "Operational ownership"
+      ]
+    },
+    guidedExamples: [
+      {
+        title: "Choose a backend data store",
+        scenario:
+          "A product needs fast location updates, searchable marketplace listings, and reliable checkout state.",
+        steps: [
+          "Keep checkout and payment state in a relational database because transactions and correctness matter.",
+          "Consider Cassandra for high-volume event or location-update writes when reads follow known partition-key patterns.",
+          "Use Elasticsearch for marketplace search where text matching, filtering, and ranking matter.",
+          "Define sync paths, stale-data tolerance, reindex strategy, and alerts for lag or hot partitions."
+        ],
+        takeaway:
+          "The mature answer is not one database for everything; it is matching each data store to the access pattern and failure mode."
+      }
+    ],
+    commonPitfalls: [
+      "Saying NoSQL is faster without naming the access pattern or consistency trade-off.",
+      "Choosing Cassandra for flexible joins, ad hoc analytics, or small relational workloads.",
+      "Treating Elasticsearch as the canonical database instead of a derived index.",
+      "Forgetting that mapping changes usually require a reindex plan."
+    ]
+  },
+  {
     id: "aws-infra-basics",
     title: "AWS and infrastructure basics",
     category: "Cloud deployment",
@@ -751,6 +818,71 @@ export const readingModules: ReadingModule[] = [
       "Relying only on client-side validation for booking rules.",
       "Letting components become large API and state containers.",
       "Ignoring the response body and guessing from the status code alone."
+    ]
+  },
+  {
+    id: "angularjs-legacy-basics",
+    title: "AngularJS legacy basics",
+    category: "Frontend fundamentals",
+    estimatedMinutes: 7,
+    summary:
+      "AngularJS 1.x is not modern Angular. Legacy answers should name $scope, controllers, directives, factories or services, two-way binding, ng-repeat, and the digest cycle.",
+    coreFacts: [
+      {
+        label: "Framework model",
+        body:
+          "AngularJS 1.x usually organizes screens around controllers, $scope, templates, directives, and dependency-injected services or factories."
+      },
+      {
+        label: "$scope",
+        body:
+          "$scope is the object that connects controller state and functions to the template, unlike modern Angular component instance state."
+      },
+      {
+        label: "Digest cycle",
+        body:
+          "The digest cycle checks watched expressions and updates bindings. Too many watchers can make large screens slow."
+      },
+      {
+        label: "Directives",
+        body:
+          "Directives such as ng-repeat, ng-if, and ng-model add behavior to markup; custom directives often wrap reusable DOM behavior."
+      }
+    ],
+    interviewLine:
+      "For AngularJS 1.x I would talk about controllers putting state on $scope, templates using directives like ng-repeat and ng-model, services or factories holding shared API logic, and the digest cycle updating watched bindings.",
+    tradeoffLens: {
+      prompt: "How do you answer AngularJS questions without drifting into modern Angular?",
+      juniorAnswer:
+        "I would say Angular has components, services, Observables, and reactive forms.",
+      midLevelAnswer:
+        "I would first clarify whether the interviewer means AngularJS 1.x or modern Angular. For AngularJS I would use the correct vocabulary: $scope, controllers, directives, factories, two-way binding, and digest-cycle watchers. The trade-off is that legacy code may be less componentized, so I would be careful when proposing migrations or refactors.",
+      considerations: [
+        "Framework version",
+        "Legacy vocabulary",
+        "Digest-cycle behavior",
+        "Migration risk"
+      ]
+    },
+    guidedExamples: [
+      {
+        title: "Debug a stale AngularJS view",
+        scenario:
+          "A legacy admin page receives async booking data, but the table does not update until the user clicks somewhere.",
+        steps: [
+          "Identify the controller, the $scope fields used by the template, and the directive rendering the data.",
+          "Check whether the async callback runs inside AngularJS awareness or outside the digest cycle.",
+          "Inspect ng-repeat size and watch count if the page is slow after updates.",
+          "Move API access into a factory or service if the controller owns too much integration logic."
+        ],
+        takeaway:
+          "A strong AngularJS answer uses the legacy mental model instead of importing modern Angular assumptions."
+      }
+    ],
+    commonPitfalls: [
+      "Answering AngularJS 1.x questions with FormGroup, FormControl, and RxJS by default.",
+      "Forgetting that ng-repeat and ng-model create watchers that affect digest-cycle cost.",
+      "Putting API and business logic directly in controllers when a factory or service should own it."
     ]
   },
   {
@@ -1090,6 +1222,74 @@ LIMIT 50;`,
       "Coding before clarifying inputs and expected behavior.",
       "Forgetting empty, unauthorized, duplicate, or invalid-input cases.",
       "Optimizing without explaining the actual data size or query pattern."
+    ]
+  },
+  {
+    id: "ai-coding-tools-sdlc",
+    title: "AI coding tools SDLC",
+    category: "Engineering workflow",
+    estimatedMinutes: 7,
+    summary:
+      "AI coding tools are strongest when used across the SDLC with human ownership: design exploration, test generation, implementation help, review, monitoring, and release preparation.",
+    coreFacts: [
+      {
+        label: "Design exploration",
+        body:
+          "Use AI coding tools to compare designs, surface edge cases, and pressure-test assumptions before committing to an implementation."
+      },
+      {
+        label: "Test generation",
+        body:
+          "Ask for unit, integration, and failure-path test ideas, then keep the tests behavior-focused and verify they fail for the right reason."
+      },
+      {
+        label: "Review ownership",
+        body:
+          "Generated code still needs normal engineering review: inspect the diff, run checks, look for hidden complexity, and verify security-sensitive boundaries."
+      },
+      {
+        label: "Monitoring and release",
+        body:
+          "A strong AI-tooling story includes rollout notes, alerts, dashboards, rollback plans, and the evidence you used before release."
+      }
+    ],
+    interviewLine:
+      "I use AI coding tools as accelerators across design, tests, implementation, review, monitoring, and release, but I keep accountability for correctness, security, and the final diff.",
+    tradeoffLens: {
+      prompt: "Where do AI coding tools help, and where must you keep ownership?",
+      juniorAnswer:
+        "They help me write code faster, and I check that it works.",
+      midLevelAnswer:
+        "They help most when I give them a narrow task: compare approaches, generate edge-case tests, draft a small implementation, or review a diff. I still own architecture fit, privacy, security, test quality, monitoring, and release decisions, so I never treat generated output as reviewed just because it compiles.",
+      considerations: [
+        "Task scope",
+        "Private data boundaries",
+        "Verification plan",
+        "Human diff review",
+        "Production observability"
+      ]
+    },
+    guidedExamples: [
+      {
+        title: "Use AI on an idempotent endpoint",
+        scenario:
+          "You need to add retry-safe behavior to an endpoint that can be called more than once by clients.",
+        steps: [
+          "Ask the tool to compare possible idempotency designs and list failure modes.",
+          "Turn the best edge cases into tests for duplicates, timeouts, and partial success.",
+          "Implement the smallest diff that persists the idempotency key and returns the original result.",
+          "Review the generated code for race conditions, data leaks, and overbroad error handling.",
+          "Add release notes, monitoring signals, and a rollback or mitigation plan before shipping."
+        ],
+        takeaway:
+          "The story should show the tool improved speed and coverage while you remained responsible for design, tests, monitoring, and release."
+      }
+    ],
+    commonPitfalls: [
+      "Describing AI usage as autocomplete instead of a full SDLC workflow.",
+      "Letting a tool choose architecture without checking project constraints.",
+      "Accepting generated tests that only mirror the implementation.",
+      "Skipping monitoring or release planning because local tests passed."
     ]
   },
   {

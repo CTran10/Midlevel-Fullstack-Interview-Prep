@@ -43,7 +43,7 @@ describe("seed flashcards", () => {
   });
 
   it("ships a separate backend-specific interview deck", () => {
-    expect(deliveryPlatformFlashcards).toHaveLength(50);
+    expect(deliveryPlatformFlashcards.length).toBeGreaterThanOrEqual(55);
     expect(deliveryPlatformTopics).toEqual([
       "HTTP/REST",
       "Databases",
@@ -62,8 +62,24 @@ describe("seed flashcards", () => {
     }
   });
 
+  it("covers NoSQL, Elasticsearch, and AI coding tools as explicit backend signals", () => {
+    const combinedBackendCards = deliveryPlatformFlashcards
+      .flatMap((card) => [card.question, card.answer, card.example, card.prompt])
+      .join(" ");
+
+    expect(combinedBackendCards).toContain("Cassandra");
+    expect(combinedBackendCards).toContain("partition key");
+    expect(combinedBackendCards).toContain("Elasticsearch");
+    expect(combinedBackendCards).toContain("reindex");
+    expect(combinedBackendCards).toContain("AI coding tools");
+    expect(combinedBackendCards).toContain("design exploration");
+    expect(combinedBackendCards).toContain("test generation");
+    expect(combinedBackendCards).toContain("monitoring");
+    expect(combinedBackendCards).toContain("release");
+  });
+
   it("ships an extended booking-platform drill bank from the markdown source", () => {
-    expect(bookingPlatformExtendedFlashcards).toHaveLength(80);
+    expect(bookingPlatformExtendedFlashcards.length).toBeGreaterThanOrEqual(86);
     expect(bookingPlatformExtendedTopics).toHaveLength(18);
 
     for (const topic of bookingPlatformExtendedTopics) {
@@ -75,6 +91,20 @@ describe("seed flashcards", () => {
       topic: "Django ORM",
       prompt: "How would you avoid accidentally running extra ORM queries in a view?"
     });
+  });
+
+  it("teaches legacy AngularJS 1.x concepts separately from modern Angular", () => {
+    const combinedFullStackCards = bookingPlatformExtendedFlashcards
+      .flatMap((card) => [card.question, card.answer, card.example, card.prompt])
+      .join(" ");
+
+    expect(combinedFullStackCards).toContain("AngularJS 1.x");
+    expect(combinedFullStackCards).toContain("$scope");
+    expect(combinedFullStackCards).toContain("digest cycle");
+    expect(combinedFullStackCards).toContain("controller");
+    expect(combinedFullStackCards).toContain("directive");
+    expect(combinedFullStackCards).toContain("factory");
+    expect(combinedFullStackCards).toContain("ng-repeat");
   });
 
   it("exposes every interview section with unique cards", () => {

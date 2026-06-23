@@ -731,6 +731,39 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
       "Explain the tradeoff between read speed, write complexity, and stale duplicated data."
   },
   {
+    id: "delivery-platform-db-cassandra-fit",
+    topic: "Databases",
+    question: "When is Cassandra a better fit than a relational database?",
+    answer:
+      "Cassandra fits high-write, horizontally scaled workloads where queries are known up front, data can be modeled around access patterns, and eventual consistency is acceptable.",
+    example:
+      "A high-volume event or location-update table can be keyed for fast writes and bounded reads without cross-row joins or transactions.",
+    prompt:
+      "Compare Cassandra with Postgres using write volume, query flexibility, joins, transactions, and consistency."
+  },
+  {
+    id: "delivery-platform-db-cassandra-partition-key",
+    topic: "Databases",
+    question: "Why does the partition key matter so much in Cassandra?",
+    answer:
+      "The partition key decides data distribution and which reads are efficient. A poor partition key creates hot partitions, unbounded rows, or queries Cassandra cannot serve without scanning.",
+    example:
+      "Keying all active updates by city alone can overload one partition, while a composite key such as region plus time bucket can spread write load.",
+    prompt:
+      "Explain partition key, clustering columns, hot partitions, and how query patterns drive the table design."
+  },
+  {
+    id: "delivery-platform-db-cassandra-consistency",
+    topic: "Databases",
+    question: "How should you explain Cassandra consistency tradeoffs?",
+    answer:
+      "Cassandra replicates data across nodes and lets clients choose read and write consistency levels. Stronger consistency costs latency and availability, while weaker consistency needs repair and stale-read tolerance.",
+    example:
+      "An operational feed may tolerate briefly stale data, but a payment or final order state usually belongs in a stronger source of truth.",
+    prompt:
+      "Talk through quorum reads and writes, eventual consistency, stale reads, repair, and when not to use Cassandra."
+  },
+  {
     id: "delivery-platform-redis-cache-aside",
     topic: "Redis/Caching",
     question: "How does the cache-aside pattern work?",
@@ -1061,6 +1094,17 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
       "Name failure modes and one graceful degradation strategy."
   },
   {
+    id: "delivery-platform-search-mappings-analyzers",
+    topic: "Search",
+    question: "What Elasticsearch mapping and analyzer choices should you be ready to discuss?",
+    answer:
+      "Mappings define field types and analyzers define how text is tokenized. Good search design separates exact filters from full-text fields and plans reindexing when mappings need to change.",
+    example:
+      "A catalog document might use keyword fields for ids and categories, text fields with analyzers for names, and a new index plus alias swap for mapping changes.",
+    prompt:
+      "Explain keyword versus text fields, analyzers, filters, scoring, and why mapping changes often require reindexing."
+  },
+  {
     id: "delivery-platform-design-order-api",
     topic: "System Design",
     question: "Design an API for creating a commerce order.",
@@ -1153,11 +1197,22 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
     topic: "Behavioral/AI",
     question: "How should you talk about AI coding tools in the development lifecycle?",
     answer:
-      "Say you use tools like Claude, Codex, or Cursor for design exploration, code drafting, test generation, review, and debugging, while you verify correctness yourself.",
+      "Say you use AI coding tools for design exploration, code drafting, test generation, review, debugging, monitoring preparation, and release checklists, while you verify correctness yourself.",
     example:
-      "Use AI to draft edge-case tests for an idempotency API, then run tests, inspect diffs, and validate the architecture manually.",
+      "Use AI to draft edge-case tests for an idempotency API, then run tests, inspect diffs, add monitor and rollback notes, and validate the architecture manually before release.",
     prompt:
-      "Explain where AI accelerates you and where engineering judgment remains non-negotiable."
+      "Explain where AI accelerates design, implementation, test generation, monitoring, and release, and where engineering judgment remains non-negotiable."
+  },
+  {
+    id: "delivery-platform-behavioral-ai-sdlc-story",
+    topic: "Behavioral/AI",
+    question: "What is a strong story for using AI coding tools across the SDLC?",
+    answer:
+      "Frame AI as an accelerator with guardrails: clarify the design, ask it for edge cases, draft tests, implement in small diffs, review the output, run checks, and prepare monitoring and release notes yourself.",
+    example:
+      "For a retry-safe endpoint, use AI to compare API designs, generate failure-path tests, draft code, review for idempotency bugs, add alert ideas, and ship only after local checks and human diff review.",
+    prompt:
+      "Tell the story with design exploration, test generation, implementation, review, monitoring, release, and your verification responsibility."
   },
   {
     id: "delivery-platform-behavioral-positioning",
