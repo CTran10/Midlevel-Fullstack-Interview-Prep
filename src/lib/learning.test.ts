@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  activeDrills,
   allLearningTypes,
+  buildMatchRound,
   filterCardsByLearningType,
+  getActiveDrill,
   getLearningPlan,
   getLearningType,
   learningTypes,
@@ -54,5 +57,46 @@ describe("learning card classification", () => {
       expect(deckTypes.has("Fact")).toBe(true);
       expect(deckTypes.has("Scenario") || deckTypes.has("Story")).toBe(true);
     }
+  });
+
+  it("offers active learning drills beyond basic flashcard reveal", () => {
+    expect(activeDrills.map((drill) => drill.id)).toEqual([
+      "match",
+      "blind-rebuild",
+      "example-non-example",
+      "prediction",
+      "question-inversion",
+      "compression",
+      "transfer",
+      "teach-back"
+    ]);
+
+    expect(getActiveDrill("transfer").steps.join(" ")).toContain("new context");
+  });
+
+  it("builds deterministic flashcard matching rounds from the selected card pool", () => {
+    const cards = allFlashcards.slice(0, 5);
+    const round = buildMatchRound(cards, 1, 4);
+
+    expect(round.prompts).toHaveLength(4);
+    expect(round.answers).toHaveLength(4);
+    expect(round.prompts.map((prompt) => prompt.cardId)).toEqual(
+      cards.slice(1, 5).map((card) => card.id)
+    );
+    expect(round.answers.map((answer) => answer.cardId)).toEqual([
+      cards[2].id,
+      cards[3].id,
+      cards[4].id,
+      cards[1].id
+    ]);
+  });
+
+  it("caps matching rounds to unique available cards", () => {
+    const cards = allFlashcards.slice(0, 2);
+    const round = buildMatchRound(cards, 0, 4);
+
+    expect(round.prompts).toHaveLength(2);
+    expect(round.answers).toHaveLength(2);
+    expect(new Set(round.prompts.map((prompt) => prompt.cardId)).size).toBe(2);
   });
 });

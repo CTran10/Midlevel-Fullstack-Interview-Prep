@@ -7,6 +7,7 @@ import {
   bookingPlatformExtendedTopics,
   flashcards,
   interviewDecks,
+  interviewTracks,
   topics
 } from "@/data/cards";
 
@@ -41,7 +42,7 @@ describe("seed flashcards", () => {
     }
   });
 
-  it("ships a separate delivery-platform backend interview deck", () => {
+  it("ships a separate backend-specific interview deck", () => {
     expect(deliveryPlatformFlashcards).toHaveLength(50);
     expect(deliveryPlatformTopics).toEqual([
       "HTTP/REST",
@@ -95,5 +96,35 @@ describe("seed flashcards", () => {
     expect(interviewDecks.find((deck) => deck.id === "delivery-platform")?.positioning).toContain(
       "backend lean"
     );
+  });
+
+  it("groups decks into neutral full-stack and backend track tabs", () => {
+    expect(interviewTracks).toEqual([
+      {
+        id: "full-stack",
+        label: "Full-stack focus",
+        description:
+          "Django, frontend state, Postgres, testing, product judgment, and user-facing feature work.",
+        deckIds: ["booking-platform", "booking-platform-extended"]
+      },
+      {
+        id: "backend-systems",
+        label: "Backend systems",
+        description:
+          "HTTP APIs, databases, caching, queues, distributed systems, reliability, search, and service boundaries.",
+        deckIds: ["delivery-platform"]
+      }
+    ]);
+
+    expect(interviewDecks.map((deck) => deck.name)).toEqual([
+      "Full-stack product fundamentals",
+      "Full-stack product extended",
+      "Backend systems fundamentals"
+    ]);
+    expect(interviewDecks.map((deck) => deck.shortName)).toEqual([
+      "Core",
+      "Extended",
+      "Systems"
+    ]);
   });
 });

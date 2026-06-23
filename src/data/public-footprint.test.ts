@@ -7,7 +7,8 @@ const forbiddenCompanyNames = [
   ["Fare", "Harbor"].join(""),
   ["fare", "harbor"].join(""),
   ["Door", "Dash"].join(""),
-  ["door", "dash"].join("")
+  ["door", "dash"].join(""),
+  ["Booking", ".com"].join("")
 ];
 
 const publicPaths = [

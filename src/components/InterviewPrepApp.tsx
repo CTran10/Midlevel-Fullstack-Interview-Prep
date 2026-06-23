@@ -5,8 +5,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   allFlashcards,
   interviewDecks,
+  interviewTracks,
   type DeckId,
   type Flashcard,
+  type TrackId,
   type Topic
 } from "@/data/cards";
 import { readingModules, type ReadingModule } from "@/data/content";
@@ -22,10 +24,17 @@ import {
 } from "@/lib/srs";
 import {
   allLearningTypes,
+  activeDrills,
+  buildMatchRound,
   filterCardsByLearningType,
+  getActiveDrill,
   getLearningPlan,
   learningTypes,
-  type LearningTypeFilter
+  type ActiveDrill,
+  type ActiveDrillId,
+  type LearningTypeFilter,
+  type MatchItem,
+  type MatchRound
 } from "@/lib/learning";
 import { buildAssessmentExport } from "@/lib/assessment-export";
 
@@ -42,7 +51,7 @@ const readingExampleCount = readingModules.reduce(
 );
 
 type TopicFilter = Topic | typeof allTopics;
-type AppMode = "study" | "read" | "mock";
+type AppMode = "study" | "read" | "mock" | "drill";
 
 const ratingStyles: Record<Rating, string> = {
   Again: "border-[var(--danger-soft)] bg-[var(--danger-soft)] text-[var(--danger-ink)]",
@@ -63,11 +72,13 @@ function getCardsForSelection(
 }
 
 export function InterviewPrepApp() {
+  const [selectedTrackId, setSelectedTrackId] = useState<TrackId>("full-stack");
   const [selectedDeckId, setSelectedDeckId] = useState<DeckId>("booking-platform");
   const [selectedTopic, setSelectedTopic] = useState<TopicFilter>(allTopics);
   const [selectedLearningType, setSelectedLearningType] =
     useState<LearningTypeFilter>(allLearningTypes);
   const [mode, setMode] = useState<AppMode>("study");
+  const [selectedDrillId, setSelectedDrillId] = useState<ActiveDrillId>("match");
   const [selectedReadingModuleId, setSelectedReadingModuleId] = useState(
     readingModules[0].id
   );
@@ -81,11 +92,24 @@ export function InterviewPrepApp() {
   const [mockSeconds, setMockSeconds] = useState(mockDurationSeconds);
   const [mockRunning, setMockRunning] = useState(false);
   const [mockFinished, setMockFinished] = useState(false);
+  const [drillIndex, setDrillIndex] = useState(0);
+  const [drillAnswerVisible, setDrillAnswerVisible] = useState(false);
+  const [selectedMatchPromptId, setSelectedMatchPromptId] = useState<string | null>(null);
+  const [selectedMatchAnswerId, setSelectedMatchAnswerId] = useState<string | null>(null);
+  const [matchedCardIds, setMatchedCardIds] = useState<string[]>([]);
+  const [matchMessage, setMatchMessage] = useState<string | null>(null);
   const [assessmentMessage, setAssessmentMessage] = useState<string | null>(null);
 
   const activeDeck = useMemo(() => {
     return interviewDecks.find((deck) => deck.id === selectedDeckId) ?? interviewDecks[0];
   }, [selectedDeckId]);
+
+  const activeTrack =
+    interviewTracks.find((track) => track.id === selectedTrackId) ?? interviewTracks[0];
+  const visibleDecks = activeTrack.deckIds
+    .map((deckId) => interviewDecks.find((deck) => deck.id === deckId))
+    .filter((deck): deck is (typeof interviewDecks)[number] => Boolean(deck));
+  const activeDrill = getActiveDrill(selectedDrillId);
 
   const activeReadingModule = useMemo(() => {
     return (
@@ -159,6 +183,11 @@ export function InterviewPrepApp() {
 
   const studyPool = dueCards.length > 0 ? dueCards : filteredCards;
   const currentCard = studyPool.length > 0 ? studyPool[studyIndex % studyPool.length] : null;
+  const currentDrillCard =
+    filteredCards.length > 0 ? filteredCards[drillIndex % filteredCards.length] : null;
+  const matchRound = useMemo(() => {
+    return buildMatchRound(filteredCards, drillIndex, 4);
+  }, [drillIndex, filteredCards]);
   const reviewedCount = getReviewedCount(mergeProgress(filteredCards, progress));
   const completionCount = knownProgress.length;
   const headerStats =
@@ -169,6 +198,13 @@ export function InterviewPrepApp() {
           { label: "Examples", value: readingExampleCount.toString() },
           { label: "Minutes", value: `${activeReadingModule.estimatedMinutes}` }
         ]
+      : mode === "drill"
+        ? [
+            { label: "Drills", value: activeDrills.length.toString() },
+            { label: "Cards", value: filteredCards.length.toString() },
+            { label: "Matched", value: matchedCardIds.length.toString() },
+            { label: "Round", value: matchRound.prompts.length.toString() }
+          ]
       : [
           { label: "Due", value: dueCards.length.toString() },
           { label: "Cards", value: filteredCards.length.toString() },
@@ -193,6 +229,39 @@ export function InterviewPrepApp() {
     [filteredCards]
   );
 
+  function resetMatchState() {
+    setSelectedMatchPromptId(null);
+    setSelectedMatchAnswerId(null);
+    setMatchedCardIds([]);
+    setMatchMessage(null);
+  }
+
+  function resetPracticeState(nextCards: Flashcard[]) {
+    setStudyIndex(0);
+    setAnswerVisible(false);
+    setMockCard(pickRandomCard(undefined, nextCards));
+    setMockSeconds(mockDurationSeconds);
+    setMockRunning(false);
+    setMockFinished(false);
+    setDrillIndex(0);
+    setDrillAnswerVisible(false);
+    resetMatchState();
+  }
+
+  function chooseTrack(trackId: TrackId) {
+    const nextTrack =
+      interviewTracks.find((track) => track.id === trackId) ?? interviewTracks[0];
+    const nextDeck =
+      interviewDecks.find((deck) => deck.id === nextTrack.deckIds[0]) ?? interviewDecks[0];
+    const nextCards = getCardsForSelection(nextDeck.cards, allTopics, allLearningTypes);
+
+    setSelectedTrackId(nextTrack.id);
+    setSelectedDeckId(nextDeck.id);
+    setSelectedTopic(allTopics);
+    setSelectedLearningType(allLearningTypes);
+    resetPracticeState(nextCards);
+  }
+
   function chooseDeck(deckId: DeckId) {
     const nextDeck = interviewDecks.find((deck) => deck.id === deckId) ?? interviewDecks[0];
     const nextCards = getCardsForSelection(nextDeck.cards, allTopics, allLearningTypes);
@@ -200,36 +269,28 @@ export function InterviewPrepApp() {
     setSelectedDeckId(nextDeck.id);
     setSelectedTopic(allTopics);
     setSelectedLearningType(allLearningTypes);
-    setStudyIndex(0);
-    setAnswerVisible(false);
-    setMockCard(pickRandomCard(undefined, nextCards));
-    setMockSeconds(mockDurationSeconds);
-    setMockRunning(false);
-    setMockFinished(false);
+    resetPracticeState(nextCards);
   }
 
   function chooseTopic(topic: TopicFilter) {
     const nextCards = getCardsForSelection(activeDeck.cards, topic, selectedLearningType);
 
     setSelectedTopic(topic);
-    setStudyIndex(0);
-    setAnswerVisible(false);
-    setMockCard(pickRandomCard(undefined, nextCards));
-    setMockSeconds(mockDurationSeconds);
-    setMockRunning(false);
-    setMockFinished(false);
+    resetPracticeState(nextCards);
   }
 
   function chooseLearningType(learningType: LearningTypeFilter) {
     const nextCards = getCardsForSelection(activeDeck.cards, selectedTopic, learningType);
 
     setSelectedLearningType(learningType);
-    setStudyIndex(0);
-    setAnswerVisible(false);
-    setMockCard(pickRandomCard(undefined, nextCards));
-    setMockSeconds(mockDurationSeconds);
-    setMockRunning(false);
-    setMockFinished(false);
+    resetPracticeState(nextCards);
+  }
+
+  function chooseDrill(drillId: ActiveDrillId) {
+    setSelectedDrillId(drillId);
+    setDrillIndex(0);
+    setDrillAnswerVisible(false);
+    resetMatchState();
   }
 
   function chooseReadingModule(moduleId: string) {
@@ -291,6 +352,78 @@ export function InterviewPrepApp() {
     });
   }
 
+  function nextDrillCard() {
+    setDrillAnswerVisible(false);
+    setDrillIndex((index) => {
+      if (filteredCards.length <= 1) {
+        return 0;
+      }
+
+      return (index + 1) % filteredCards.length;
+    });
+  }
+
+  function nextMatchRound() {
+    setDrillAnswerVisible(false);
+    resetMatchState();
+    setDrillIndex((index) => {
+      if (filteredCards.length <= 1) {
+        return 0;
+      }
+
+      return (index + matchRound.prompts.length) % filteredCards.length;
+    });
+  }
+
+  function resolveMatch(promptId: string, answerId: string) {
+    if (promptId === answerId) {
+      const nextMatchedIds = matchedCardIds.includes(promptId)
+        ? matchedCardIds
+        : [...matchedCardIds, promptId];
+      const roundComplete = matchRound.prompts.every((prompt) =>
+        nextMatchedIds.includes(prompt.cardId)
+      );
+
+      setMatchedCardIds(nextMatchedIds);
+      setSelectedMatchPromptId(null);
+      setSelectedMatchAnswerId(null);
+      setMatchMessage(roundComplete ? "Round complete." : "Matched.");
+      return;
+    }
+
+    setSelectedMatchPromptId(null);
+    setSelectedMatchAnswerId(null);
+    setMatchMessage("Not quite. Use the topic and answer shape, then try again.");
+  }
+
+  function chooseMatchPrompt(cardId: string) {
+    if (matchedCardIds.includes(cardId)) {
+      return;
+    }
+
+    if (selectedMatchAnswerId) {
+      resolveMatch(cardId, selectedMatchAnswerId);
+      return;
+    }
+
+    setSelectedMatchPromptId(cardId);
+    setMatchMessage(null);
+  }
+
+  function chooseMatchAnswer(cardId: string) {
+    if (matchedCardIds.includes(cardId)) {
+      return;
+    }
+
+    if (selectedMatchPromptId) {
+      resolveMatch(selectedMatchPromptId, cardId);
+      return;
+    }
+
+    setSelectedMatchAnswerId(cardId);
+    setMatchMessage(null);
+  }
+
   function startMockAnswer() {
     setMockSeconds(mockDurationSeconds);
     setMockRunning(true);
@@ -320,6 +453,9 @@ export function InterviewPrepApp() {
     });
     setStudyIndex(0);
     setAnswerVisible(false);
+    setDrillIndex(0);
+    setDrillAnswerVisible(false);
+    resetMatchState();
     setNow(new Date());
   }
 
@@ -345,21 +481,25 @@ export function InterviewPrepApp() {
         <header className="study-surface soft-enter flex flex-col gap-5 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-3xl">
             <p className="mb-2 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--accent)]">
-              {mode === "read" ? "Reading guide" : `${activeDeck.name} prep`}
+              {mode === "read" ? "Reading guide" : `${activeTrack.label} prep`}
             </p>
             <h1 className="text-3xl font-semibold tracking-[0] text-balance sm:text-4xl">
               {mode === "read"
                 ? "Read the concepts, then rehearse the answer."
+                : mode === "drill"
+                  ? "Active drills for durable interview recall."
                 : "Active recall flashcards for your next interview."}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-base">
               {mode === "read"
                 ? "Factual notes for Django, Postgres, concurrency, booking system design, infra, Angular, and behavioral stories."
-                : activeDeck.description}
+                : activeTrack.description}
             </p>
             <p className="mt-2 text-xs font-semibold text-[var(--muted)]">
               {mode === "read"
                 ? `Current section: ${activeReadingModule.title}`
+                : mode === "drill"
+                  ? `Drill: ${activeDrill.label}${selectedTopic === allTopics ? "" : ` / ${selectedTopic}`}`
                 : `Focus: ${selectedLearningType}${selectedTopic === allTopics ? "" : ` / ${selectedTopic}`}`}
             </p>
           </div>
@@ -377,7 +517,7 @@ export function InterviewPrepApp() {
           </div>
         ) : null}
 
-        <nav className="study-surface soft-enter grid grid-cols-3 gap-2 p-2 sm:flex sm:w-fit">
+        <nav className="study-surface soft-enter grid grid-cols-2 gap-2 p-2 sm:flex sm:w-fit">
           <ModeButton
             active={mode === "study"}
             label="Flashcards"
@@ -387,6 +527,11 @@ export function InterviewPrepApp() {
             active={mode === "read"}
             label="Reading guide"
             onClick={() => setMode("read")}
+          />
+          <ModeButton
+            active={mode === "drill"}
+            label="Active drills"
+            onClick={() => setMode("drill")}
           />
           <ModeButton
             active={mode === "mock"}
@@ -405,7 +550,27 @@ export function InterviewPrepApp() {
               />
             ) : (
               <>
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="mb-5 grid gap-2">
+                  <h2 className="text-lg font-semibold">Track</h2>
+                  {interviewTracks.map((track) => {
+                    const trackCards = track.deckIds.reduce((total, deckId) => {
+                      const deck = interviewDecks.find((candidate) => candidate.id === deckId);
+                      return total + (deck?.cards.length ?? 0);
+                    }, 0);
+
+                    return (
+                      <TopicButton
+                        key={track.id}
+                        active={selectedTrackId === track.id}
+                        label={track.label}
+                        meta={`${trackCards} cards`}
+                        onClick={() => chooseTrack(track.id)}
+                      />
+                    );
+                  })}
+                </div>
+
+                <div className="mb-4 flex items-center justify-between gap-3 border-t border-[var(--line)] pt-5">
                   <h2 className="text-lg font-semibold">Deck</h2>
                   <button
                     className="focus-ring rounded-md border border-[var(--line)] px-3 py-2 text-xs font-semibold text-[var(--muted)] transition hover:border-[var(--ink)] hover:text-[var(--ink)] active:scale-[0.98]"
@@ -417,7 +582,7 @@ export function InterviewPrepApp() {
                 </div>
 
                 <div className="mb-5 grid gap-2">
-                  {interviewDecks.map((deck) => (
+                  {visibleDecks.map((deck) => (
                     <TopicButton
                       key={deck.id}
                       active={selectedDeckId === deck.id}
@@ -427,6 +592,21 @@ export function InterviewPrepApp() {
                     />
                   ))}
                 </div>
+
+                {mode === "drill" ? (
+                  <div className="mb-5 grid gap-2 border-t border-[var(--line)] pt-5">
+                    <h3 className="text-sm font-semibold">Drill</h3>
+                    {activeDrills.map((drill) => (
+                      <TopicButton
+                        key={drill.id}
+                        active={selectedDrillId === drill.id}
+                        label={drill.shortLabel}
+                        meta={drill.label}
+                        onClick={() => chooseDrill(drill.id)}
+                      />
+                    ))}
+                  </div>
+                ) : null}
 
                 <div className="mb-5 grid gap-2 border-t border-[var(--line)] pt-5">
                   <h3 className="text-sm font-semibold">Practice</h3>
@@ -505,6 +685,23 @@ export function InterviewPrepApp() {
                 onReveal={() => setAnswerVisible(true)}
                 onSkip={skipCard}
                 poolCount={studyPool.length}
+                topic={selectedTopic}
+              />
+            ) : mode === "drill" ? (
+              <DrillMode
+                answerVisible={drillAnswerVisible}
+                card={currentDrillCard}
+                drill={activeDrill}
+                matchMessage={matchMessage}
+                matchRound={matchRound}
+                matchedCardIds={matchedCardIds}
+                onAnswerSelect={chooseMatchAnswer}
+                onNextCard={nextDrillCard}
+                onNextMatchRound={nextMatchRound}
+                onPromptSelect={chooseMatchPrompt}
+                onReveal={() => setDrillAnswerVisible(true)}
+                selectedAnswerId={selectedMatchAnswerId}
+                selectedPromptId={selectedMatchPromptId}
                 topic={selectedTopic}
               />
             ) : (
@@ -920,6 +1117,276 @@ function StudyMode({
   );
 }
 
+function DrillMode({
+  answerVisible,
+  card,
+  drill,
+  matchMessage,
+  matchRound,
+  matchedCardIds,
+  onAnswerSelect,
+  onNextCard,
+  onNextMatchRound,
+  onPromptSelect,
+  onReveal,
+  selectedAnswerId,
+  selectedPromptId,
+  topic
+}: {
+  answerVisible: boolean;
+  card: Flashcard | null;
+  drill: ActiveDrill;
+  matchMessage: string | null;
+  matchRound: MatchRound;
+  matchedCardIds: string[];
+  onAnswerSelect: (cardId: string) => void;
+  onNextCard: () => void;
+  onNextMatchRound: () => void;
+  onPromptSelect: (cardId: string) => void;
+  onReveal: () => void;
+  selectedAnswerId: string | null;
+  selectedPromptId: string | null;
+  topic: TopicFilter;
+}) {
+  if (!card) {
+    return <EmptyFocusState />;
+  }
+
+  if (drill.id === "match") {
+    return (
+      <MatchDrill
+        matchMessage={matchMessage}
+        matchRound={matchRound}
+        matchedCardIds={matchedCardIds}
+        onAnswerSelect={onAnswerSelect}
+        onNextMatchRound={onNextMatchRound}
+        onPromptSelect={onPromptSelect}
+        selectedAnswerId={selectedAnswerId}
+        selectedPromptId={selectedPromptId}
+        topic={topic}
+      />
+    );
+  }
+
+  const learningPlan = getLearningPlan(card);
+
+  return (
+    <section className="study-surface soft-enter overflow-hidden">
+      <div className="border-b border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 sm:px-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-semibold text-[var(--accent)]">{card.topic}</p>
+              <span className="rounded-md border border-[var(--line)] bg-[var(--surface)] px-2 py-1 text-xs font-semibold text-[var(--muted)]">
+                {learningPlan.shortLabel}
+              </span>
+            </div>
+            <p className="text-xs text-[var(--muted)]">
+              {topic === allTopics ? "Mixed-topic drill" : topic}
+            </p>
+          </div>
+          <button
+            className="focus-ring rounded-md border border-[var(--line)] px-3 py-2 text-sm font-semibold text-[var(--muted)] transition hover:border-[var(--ink)] hover:text-[var(--ink)] active:scale-[0.98]"
+            type="button"
+            onClick={onNextCard}
+          >
+            Next card
+          </button>
+        </div>
+      </div>
+
+      <article className="grid gap-5 p-4 sm:p-6">
+        <div>
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
+            {drill.label}
+          </p>
+          <h2 className="max-w-4xl text-2xl font-semibold leading-tight tracking-[0] sm:text-3xl">
+            {card.question}
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+            {drill.description}
+          </p>
+        </div>
+
+        <section className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-[var(--ink)]">Drill steps</h3>
+          <ol className="mt-3 grid gap-3">
+            {drill.steps.map((step, index) => (
+              <li
+                key={step}
+                className="grid grid-cols-[32px_minmax(0,1fr)] gap-3 text-sm leading-6 text-[var(--muted)]"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-[var(--accent-soft)] font-mono text-xs font-semibold text-[var(--accent)]">
+                  {index + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {answerVisible ? (
+          <div className="grid gap-4">
+            <AnswerBlock title="Answer shape" body={learningPlan.answerShape} />
+            <AnswerBlock title="Answer" body={card.answer} />
+            <AnswerBlock title="Example" body={card.example} />
+            <AnswerBlock title="Say it in 60 seconds" body={card.prompt} />
+          </div>
+        ) : (
+          <div className="grid gap-3 border-t border-[var(--line)] pt-4 sm:flex">
+            <button
+              className="focus-ring rounded-md bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#303030] active:scale-[0.98]"
+              type="button"
+              onClick={onReveal}
+            >
+              Reveal anchor
+            </button>
+            <button
+              className="focus-ring rounded-md border border-[var(--line)] px-4 py-3 text-sm font-semibold text-[var(--muted)] transition hover:border-[var(--ink)] hover:text-[var(--ink)] active:scale-[0.98]"
+              type="button"
+              onClick={onNextCard}
+            >
+              Try another
+            </button>
+          </div>
+        )}
+      </article>
+    </section>
+  );
+}
+
+function MatchDrill({
+  matchMessage,
+  matchRound,
+  matchedCardIds,
+  onAnswerSelect,
+  onNextMatchRound,
+  onPromptSelect,
+  selectedAnswerId,
+  selectedPromptId,
+  topic
+}: {
+  matchMessage: string | null;
+  matchRound: MatchRound;
+  matchedCardIds: string[];
+  onAnswerSelect: (cardId: string) => void;
+  onNextMatchRound: () => void;
+  onPromptSelect: (cardId: string) => void;
+  selectedAnswerId: string | null;
+  selectedPromptId: string | null;
+  topic: TopicFilter;
+}) {
+  const roundComplete =
+    matchRound.prompts.length > 0 &&
+    matchRound.prompts.every((prompt) => matchedCardIds.includes(prompt.cardId));
+
+  return (
+    <section className="study-surface soft-enter overflow-hidden">
+      <div className="border-b border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3 sm:px-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-[var(--accent)]">
+              {topic === allTopics ? "Mixed-topic matching" : topic}
+            </p>
+            <p className="text-xs text-[var(--muted)]">
+              {matchedCardIds.length} of {matchRound.prompts.length} matched
+            </p>
+          </div>
+          <button
+            className="focus-ring rounded-md border border-[var(--line)] px-3 py-2 text-sm font-semibold text-[var(--muted)] transition hover:border-[var(--ink)] hover:text-[var(--ink)] active:scale-[0.98]"
+            type="button"
+            onClick={onNextMatchRound}
+          >
+            Next round
+          </button>
+        </div>
+      </div>
+
+      <article className="grid gap-5 p-4 sm:p-6">
+        <div>
+          <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.12em] text-[var(--muted)]">
+            Match cards
+          </p>
+          <h2 className="max-w-4xl text-2xl font-semibold leading-tight tracking-[0] sm:text-3xl">
+            Pair each prompt with its answer.
+          </h2>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <MatchColumn
+            items={matchRound.prompts}
+            matchedCardIds={matchedCardIds}
+            onSelect={onPromptSelect}
+            selectedId={selectedPromptId}
+            title="Prompts"
+          />
+          <MatchColumn
+            items={matchRound.answers}
+            matchedCardIds={matchedCardIds}
+            onSelect={onAnswerSelect}
+            selectedId={selectedAnswerId}
+            title="Answers"
+          />
+        </div>
+
+        {matchMessage || roundComplete ? (
+          <div
+            className={`rounded-lg border px-4 py-3 text-sm font-semibold ${
+              roundComplete
+                ? "border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--blue-soft)] bg-[var(--blue-soft)] text-[var(--blue-ink)]"
+            }`}
+          >
+            {roundComplete ? "Round complete. Move to the next set when ready." : matchMessage}
+          </div>
+        ) : null}
+      </article>
+    </section>
+  );
+}
+
+function MatchColumn({
+  items,
+  matchedCardIds,
+  onSelect,
+  selectedId,
+  title
+}: {
+  items: MatchItem[];
+  matchedCardIds: string[];
+  onSelect: (cardId: string) => void;
+  selectedId: string | null;
+  title: string;
+}) {
+  return (
+    <section>
+      <h3 className="text-sm font-semibold text-[var(--ink)]">{title}</h3>
+      <div className="mt-3 grid gap-2">
+        {items.map((item) => {
+          const matched = matchedCardIds.includes(item.cardId);
+          const selected = selectedId === item.cardId;
+
+          return (
+            <button
+              key={item.cardId}
+              aria-pressed={selected}
+              className={matchButtonClassName({ matched, selected })}
+              disabled={matched}
+              type="button"
+              onClick={() => onSelect(item.cardId)}
+            >
+              <span className="block text-xs font-semibold text-[var(--accent)]">
+                {item.topic}
+              </span>
+              <span className="mt-1 block text-sm leading-6">{item.text}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function MockMode({
   card,
   finished,
@@ -1047,6 +1514,27 @@ function AnswerBlock({ title, body }: { title: string; body: string }) {
       <p className="text-sm leading-6 text-[var(--muted)]">{body}</p>
     </section>
   );
+}
+
+function matchButtonClassName({
+  matched,
+  selected
+}: {
+  matched: boolean;
+  selected: boolean;
+}) {
+  const base =
+    "focus-ring rounded-lg border px-3 py-3 text-left transition active:scale-[0.99]";
+
+  if (matched) {
+    return `${base} border-[var(--accent-soft)] bg-[var(--accent-soft)] text-[var(--accent)] opacity-75`;
+  }
+
+  if (selected) {
+    return `${base} border-[var(--blue-ink)] bg-[var(--blue-soft)] text-[var(--blue-ink)]`;
+  }
+
+  return `${base} border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] hover:border-[var(--accent)]`;
 }
 
 function ratingHint(rating: Rating): string {

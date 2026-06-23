@@ -28,7 +28,7 @@ describe("assessment export", () => {
 
     expect(report).toContain("# Mid-level full-stack SWE readiness export");
     expect(report).toContain("Target level: Mid-level full-stack SWE");
-    expect(report).toContain("Deck: Booking platform full-stack");
+    expect(report).toContain("Deck: Full-stack product fundamentals");
     expect(report).toContain("Reviewed cards: 3 / 50");
     expect(report).toContain("Due cards:");
     expect(report).toContain("Postgres");

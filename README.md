@@ -15,15 +15,15 @@ The project is intentionally small: no backend, no auth, no tracking, no externa
 ## Study Modes
 
 - `Study`: active-recall cards with examples, 60-second answer prompts, and Again / Hard / Good / Easy ratings.
-- `Mock`: random interview prompts with a timer and hidden answers.
 - `Read`: factual notes, interview-ready lines, tradeoff lenses, pitfalls, and guided examples.
-- `Progress`: deck-level review counts, due cards, weak areas, and next study recommendations.
+- `Active drills`: matching, blind rebuild, examples/non-examples, prediction, inversion, compression, transfer, and teach-back prompts.
+- `Mock`: random interview prompts with a timer and hidden answers.
+- `Readiness export`: deck-level review counts, due cards, weak areas, and next study recommendations.
 
 ## Decks And Content
 
-- Booking platform full-stack deck: Django, Postgres, performance, testing, system design, AWS/infra, and behavioral prompts.
-- Booking platform extended drill bank: imported from the included markdown source for deeper ORM, booking-system, Angular, AWS, Terraform, and behavioral practice.
-- Delivery platform backend deck: HTTP/REST, databases, Redis/caching, queues, distributed systems, microservices, reliability, search, system design, and behavioral/AI tooling.
+- Full-stack focus: core and extended decks for Django, Postgres, performance, testing, frontend state, system design, AWS/infra, and behavioral prompts.
+- Backend systems: HTTP/REST, databases, Redis/caching, queues, distributed systems, microservices, reliability, search, system design, and behavioral/AI tooling.
 - Reading guide: factual modules for booking systems, Postgres, Django, transactions, keys, performance, testing, Redis, queues, AWS, frontend basics, auth, API design, observability, forms, SQL, and behavioral stories.
 
 ## LLM Readiness Export

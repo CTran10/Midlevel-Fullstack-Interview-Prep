@@ -678,7 +678,7 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
   {
     id: "delivery-platform-db-indexes",
     topic: "Databases",
-    question: "What makes a Postgres index useful for a delivery-platform-style backend?",
+    question: "What makes a Postgres index useful for a high-traffic backend?",
     answer:
       "An index helps when it matches a common filter, join, or sort pattern and narrows the scanned rows enough to beat its write and storage cost.",
     example:
@@ -1063,7 +1063,7 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
   {
     id: "delivery-platform-design-order-api",
     topic: "System Design",
-    question: "Design an API for creating a food delivery order.",
+    question: "Design an API for creating a commerce order.",
     answer:
       "Accept cart, address, payment method, idempotency key, and client metadata; validate, price, reserve, authorize payment, create order state, and return a stable response.",
     example:
@@ -1074,7 +1074,7 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
   {
     id: "delivery-platform-design-driver-dispatch",
     topic: "System Design",
-    question: "How would you design a driver dispatch system at a high level?",
+    question: "How would you design a real-time dispatch system at a high level?",
     answer:
       "Match orders to drivers using location, capacity, availability, ETA, batching rules, fairness, and fallback logic, with real-time updates and observability.",
     example:
@@ -1118,7 +1118,7 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
   {
     id: "delivery-platform-behavioral-performance",
     topic: "Behavioral/AI",
-    question: "How should you tell a performance optimization story for a delivery platform?",
+    question: "How should you tell a performance optimization story for a backend platform?",
     answer:
       "Use a concrete user impact, measurement, root cause, fix, validation, and prevention. Tie it to latency, reliability, or resource efficiency.",
     example:
@@ -1166,7 +1166,7 @@ export const deliveryPlatformFlashcards: Flashcard[] = [
     answer:
       "I am a full-stack engineer with a backend lean, working mostly with Django, Angular, and Postgres in production startup environments. I have owned backend features, improved performance, built AI evaluation tooling, and debugged production issues.",
     example:
-      "What interests me about delivery systems is backend scale where reliability, latency, and architecture directly affect consumers, merchants, and drivers.",
+      "What interests me about high-scale backend systems is how reliability, latency, and architecture directly affect users, operators, and business outcomes.",
     prompt:
       "Say the positioning naturally, then close with interest in service-oriented architecture and high-scale reliability."
   }
@@ -1193,6 +1193,14 @@ function toCardSlug(value: string): string {
 }
 
 export type DeckId = "booking-platform" | "booking-platform-extended" | "delivery-platform";
+export type TrackId = "full-stack" | "backend-systems";
+
+export type InterviewTrack = {
+  id: TrackId;
+  label: string;
+  description: string;
+  deckIds: readonly DeckId[];
+};
 
 export type InterviewDeck = {
   id: DeckId;
@@ -1204,11 +1212,28 @@ export type InterviewDeck = {
   cards: Flashcard[];
 };
 
+export const interviewTracks: InterviewTrack[] = [
+  {
+    id: "full-stack",
+    label: "Full-stack focus",
+    description:
+      "Django, frontend state, Postgres, testing, product judgment, and user-facing feature work.",
+    deckIds: ["booking-platform", "booking-platform-extended"]
+  },
+  {
+    id: "backend-systems",
+    label: "Backend systems",
+    description:
+      "HTTP APIs, databases, caching, queues, distributed systems, reliability, search, and service boundaries.",
+    deckIds: ["delivery-platform"]
+  }
+];
+
 export const interviewDecks: InterviewDeck[] = [
   {
     id: "booking-platform",
-    name: "Booking platform full-stack",
-    shortName: "Booking",
+    name: "Full-stack product fundamentals",
+    shortName: "Core",
     description:
       "Django, Postgres, testing, performance, system design, infra, and behavioral prep for a full-stack interview.",
     topics,
@@ -1216,7 +1241,7 @@ export const interviewDecks: InterviewDeck[] = [
   },
   {
     id: "booking-platform-extended",
-    name: "Booking platform extended",
+    name: "Full-stack product extended",
     shortName: "Extended",
     description:
       "A larger drill bank imported from the markdown source, with focused Django, Postgres, booking-system, Angular, AWS, Terraform, and behavioral prompts.",
@@ -1225,8 +1250,8 @@ export const interviewDecks: InterviewDeck[] = [
   },
   {
     id: "delivery-platform",
-    name: "Delivery platform backend",
-    shortName: "Delivery",
+    name: "Backend systems fundamentals",
+    shortName: "Systems",
     description:
       "Large-scale backend systems, 24/7 reliability, REST, service-oriented architecture, data stores, queues, search, and AI tooling.",
     positioning:
